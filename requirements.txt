@@ -1,0 +1,14 @@
+streamlit
+plotly
+openai
+anthropic
+langchain
+langchain_openai
+langchain_anthropic
+pandas
+matplotlib
+regex
+transformers
+torch
+accelerate
+python-dotenv
