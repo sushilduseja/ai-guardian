@@ -9,4 +9,4 @@
 
 import os
 
-MODEL_NAME = os.getenv("MODEL_NAME", "google/flan-t5-large") 
+MODEL_NAME = os.getenv("MODEL_NAME", "distilgpt2")  # Smallest GPT2 variant, ~500MB
