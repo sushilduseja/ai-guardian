@@ -1,3 +1,0 @@
-"""
-AI Guardian test suite.
-"""
