@@ -1,32 +1,57 @@
-# FLAN-T5: "google/flan-t5-base" (or "google/flan-t5-large" for better performance)
-# Mistral-7B-Instruct-v0.2: "mistralai/Mistral-7B-Instruct-v0.2"
-# MPT-7B-Instruct: "mosaicml/mpt-7b-instruct"
-# T5: "google/t5-base" (or "google/t5-small" for efficiency)
-# RoBERTa: "roberta-base"
-# BERT/DistilBERT: "distilbert-base-uncased"
-# TinyLlama-1.1B-Chat: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-# Whisper-small: "openai/whisper-small"
-# "distilgpt2" (Smallest GPT2 variant, ~500MB)
-
 import os
 
 AVAILABLE_MODELS = {
     "distilgpt2": {
         "name": "DistilGPT2",
-        "description": "Lightweight GPT2 variant (~500MB)",
-        "requirements": "Minimal resources required"
+        "description": "Lightweight GPT2, reliable on Streamlit Cloud",
+        "size": "500MB",
+        "performance": "Fast",
+        "use_case": "General text generation",
+        "requirements": "Minimal resources"
     },
-    "TinyLlama/TinyLlama-1.1B-Chat-v1.0": {
-        "name": "TinyLlama Chat",
-        "description": "Small but effective chat model",
-        "requirements": "Moderate resources required"
+    "gpt2": {
+        "name": "GPT2",
+        "description": "Slightly larger GPT2 model, good performance",
+        "size": "1.5GB",
+        "performance": "Good",
+        "use_case": "General text generation",
+        "requirements": "Moderate resources"
     },
-    "google/t5-small": {
-        "name": "T5 Small",
-        "description": "Efficient text-to-text model",
-        "requirements": "Moderate resources required"
+    "EleutherAI/pythia-160m": {
+        "name": "Pythia 160M",
+        "description": "Most efficient open source model",
+        "size": "160MB",
+        "performance": "Fast",
+        "use_case": "Text generation",
+        "requirements": "Minimal resources"
+    },
+    "cerebras/Cerebras-GPT-111M": {
+        "name": "Cerebras GPT 111M",
+        "description": "Small, efficient GPT model",
+        "size": "111MB",
+        "performance": "Fast",
+        "use_case": "Text generation",
+        "requirements": "Minimal resources"
     }
 }
 
+# Default to the most reliable model for Streamlit Cloud
 DEFAULT_MODEL = "distilgpt2"
+
+# Updated recommendations for Streamlit Cloud compatibility
+RECOMMENDED_MODELS = [
+    "distilgpt2",  # Most reliable
+    "gpt2",  # Good balance
+    "EleutherAI/pythia-160m"  # Most efficient
+]
+
 MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
+
+# Updated use case recommendations for Streamlit Cloud
+USE_CASE_RECOMMENDATIONS = {
+    "accuracy": "gpt2",
+    "speed": "EleutherAI/pythia-160m",
+    "balanced": "distilgpt2",
+    "minimal_resources": "EleutherAI/pythia-160m",
+    "cloud_deployment": "distilgpt2"
+}
