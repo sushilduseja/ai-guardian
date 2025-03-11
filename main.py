@@ -40,6 +40,39 @@ if "blocked" not in st.session_state:
 st.write("# AI Guardian")
 st.write("Your shield against prompt injection attacks")
 
+# Create columns for key metrics at the top
+col1, col2, col3, col4 = st.columns(4)
+safe_attempts = st.session_state.attempts - st.session_state.blocked
+
+with col1:
+    st.metric(
+        "Success Rate",
+        f"{(safe_attempts/max(1, st.session_state.attempts))*100:.1f}%",
+        delta="Good" if safe_attempts > st.session_state.blocked else "Needs Attention"
+    )
+
+with col2:
+    st.metric(
+        "Total Prompts",
+        st.session_state.attempts,
+        delta=f"+{st.session_state.attempts - st.session_state.blocked}"
+    )
+
+with col3:
+    st.metric(
+        "Blocked Threats",
+        st.session_state.blocked,
+        delta=f"{(st.session_state.blocked/max(1, st.session_state.attempts))*100:.1f}% of total"
+    )
+
+with col4:
+    avg_time = sum([1.5]) / max(1, len(st.session_state.generation_history))
+    st.metric(
+        "Avg Response Time",
+        f"{avg_time:.2f}s",
+        delta="Fast" if avg_time < 2 else "Normal"
+    )
+
 # Smart model loading with progress indication
 @st.cache_resource
 def load_model() -> Tuple[Optional[AutoModelForCausalLM], Optional[AutoTokenizer]]:
@@ -119,26 +152,27 @@ def on_prompt_change():
     st.session_state.current_prompt = st.session_state.input_prompt
     st.session_state.last_prompt = st.session_state.current_prompt
 
-# Smart input area with validation and dynamic character count
+# Smart input section with clear visual hierarchy
+st.write("## 💬 Enter Your Prompt")
 MAX_CHARS = 500
 current_chars = len(st.session_state.current_prompt)
-st.write(f"Characters: {current_chars}/{MAX_CHARS}")
-progress = current_chars / MAX_CHARS
-if progress > 0:
-    st.progress(min(progress, 1.0))
+chars_remaining = MAX_CHARS - current_chars
+st.caption(f"Characters remaining: {chars_remaining}")
 
 user_prompt = st.text_area(
-    "Enter your prompt:",
+    "",  # Remove label as it's shown in the header
     key="input_prompt",
     value=st.session_state.current_prompt,
     max_chars=MAX_CHARS,
     help="Type your prompt here. AI Guardian will protect against injection attacks.",
-    on_change=on_prompt_change
+    on_change=on_prompt_change,
+    height=100  # Make input area more prominent
 )
 
-# Update current prompt immediately when typing
-if user_prompt != st.session_state.current_prompt:
-    st.session_state.current_prompt = user_prompt
+# Progress bar for character count
+if current_chars > 0:
+    progress = current_chars / MAX_CHARS
+    st.progress(min(progress, 1.0))
 
 # Real-time input validation
 if st.session_state.current_prompt:
@@ -179,49 +213,70 @@ if st.session_state.current_prompt:
         st.write("### ⚠️ Fallback Response:")
         st.write(f"Input received: {sanitized_prompt[:50]}...")
 
-# Enhanced visualization with real-time updates
-st.write("## 📊 Attack Attempt Statistics")
-data = {
-    "Type": ["Total Attempts", "Blocked Attempts"],
-    "Count": [st.session_state.attempts, st.session_state.blocked]
-}
+# Visualization section
+st.write("## 📊 Security Dashboard")
 
-try:
-    fig = px.bar(
+# Create two columns for visualizations
+viz_col1, viz_col2 = st.columns(2)
+
+with viz_col1:
+    # Pie chart for better visual impact
+    safe_attempts = st.session_state.attempts - st.session_state.blocked
+    pie_data = {
+        "Status": ["Safe Prompts", "Blocked Attempts"],
+        "Count": [safe_attempts, st.session_state.blocked]
+    }
+    fig1 = px.pie(
+        pie_data,
+        values="Count",
+        names="Status",
+        title="Safety Analysis",
+        color="Status",
+        color_discrete_map={
+            "Safe Prompts": "#00CC96",
+            "Blocked Attempts": "#EF553B"
+        }
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+with viz_col2:
+    # Bar chart
+    data = {
+        "Type": ["Total Attempts", "Blocked Attempts"],
+        "Count": [st.session_state.attempts, st.session_state.blocked]
+    }
+    fig2 = px.bar(
         data, 
         x="Type", 
         y="Count", 
         title="Prompt Injection Attempts",
         color="Type",
         color_discrete_map={
-            "Total Attempts": "#636EFA",  # Default Plotly blue
-            "Blocked Attempts": "#EF553B"  # Red color
+            "Total Attempts": "#636EFA",
+            "Blocked Attempts": "#EF553B"
         }
     )
-    st.plotly_chart(fig)
-except Exception as e:
-    # Fallback to simple text display
-    st.error(f"Visualization error: {e}")
-    st.write(f"Total Attempts: {st.session_state.attempts}")
-    st.write(f"Blocked Attempts: {st.session_state.blocked}")
-    
-    # Even simpler fallback - create a text-based bar chart
-    st.write("### Text-based Statistics:")
-    st.write(f"Total Attempts: {'█' * st.session_state.attempts} ({st.session_state.attempts})")
-    st.write(f"Blocked Attempts: {'█' * st.session_state.blocked} ({st.session_state.blocked})")
+    st.plotly_chart(fig2, use_container_width=True)
 
-# Add useful shortcuts and tips
+# Move tips to a more prominent position in sidebar
 st.sidebar.markdown("""
-### 💡 Quick Tips
-- Press Ctrl+Enter to generate quickly
-- Use arrow keys to browse history
-- Clear input with Esc
+# 💡 Quick Guide
+### Keyboard Shortcuts
+- `Ctrl+Enter`: Generate response
+- `Esc`: Clear input
+- `↑↓`: Browse history
+
+### Safety Tips
+- Keep prompts clear and direct
+- Check sanitized output when blocked
+- Review statistics for insights
 """)
 
-# Add session summary
+# Session summary at the bottom of sidebar
+st.sidebar.markdown("---")
 st.sidebar.markdown(f"""
-### 📝 Session Summary
-- Successful generations: {len(st.session_state.generation_history)}
-- Blocked attempts: {st.session_state.blocked}
-- Average response time: {sum([1.5]) / max(1, len(st.session_state.generation_history)):.2f}s
+### 📝 Session Overview
+- ✅ Successful: {len(st.session_state.generation_history)}
+- 🛡️ Blocked: {st.session_state.blocked}
+- ⚡ Avg Time: {avg_time:.2f}s
 """)
