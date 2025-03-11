@@ -15,7 +15,7 @@ AI Guardian is a demonstration system that showcases prompt injection defense te
 - **Frontend**: Streamlit
 - **Visualization**: Plotly Express
 - **ML Framework**: Hugging Face Transformers
-- **Default Model**: google/flan-t5-large (configurable)
+- **Default Model**: distilgpt2 (configurable)
 
 ## Installation
 
@@ -45,16 +45,12 @@ streamlit run main.py
 
 The system can be configured through environment variables:
 
-- `MODEL_NAME`: Change the Hugging Face model (default: "google/flan-t5-large")
+- `MODEL_NAME`: Change the Hugging Face model (default: "distilgpt2")
 
 Other supported models include:
-- google/flan-t5-base
-- mistralai/Mistral-7B-Instruct-v0.2
-- mosaicml/mpt-7b-instruct
-- google/t5-base
-- roberta-base
-- distilbert-base-uncased
-- TinyLlama/TinyLlama-1.1B-Chat-v1.0
+- gpt2
+- EleutherAI/pythia-160m
+- cerebras/Cerebras-GPT-111M
 
 ## Security Features
 
@@ -78,19 +74,29 @@ The system maintains two key metrics:
 
 ```
 ai-guardian/
-├── main.py           # Main Streamlit application
-├── config.py         # Configuration settings
-├── requirements.txt  # Project dependencies
+├── main.py               # Main Streamlit application
+├── config.py            # Model configuration settings
+├── requirements.txt     # Project dependencies
+├── core/
+│   ├── __init__.py     # Core package initialization
+│   ├── interfaces.py   # Abstract base classes
+│   └── model_handler.py # Model loading and inference
+├── components/
+│   ├── __init__.py     # Components package initialization
+│   ├── input.py        # User input handling
+│   ├── metrics.py      # Analytics dashboard
+│   └── visualizations.py # Security visualizations
 ├── utils/
-│   ├── __init__.py  # Package initialization
-│   └── utils.py     # Core utility functions
+│   ├── __init__.py     # Utils package initialization
+│   └── utils.py        # Security utility functions
 └── tests/
-    └── test_utils.py # Unit tests
+    ├── __init__.py     # Tests package initialization
+    └── test_security.py # Security features testing
 ```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.## 
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
