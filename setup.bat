@@ -1,12 +1,9 @@
 @echo off
-echo Creating Python virtual environment...
-python -m venv venv
-
-echo Activating virtual environment...
-call venv\Scripts\activate.bat
+echo Creating Python virtual environment with uv...
+uv venv
 
 echo Installing dependencies...
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+uv pip install -r requirements.txt
 
-echo Setup complete! Run 'venv\Scripts\activate.bat' to activate the environment
+echo Setup complete! Activate with: .venv\Scripts\activate
+echo Then run: streamlit run main.py

@@ -1,70 +1,173 @@
-import unittest
-from unittest.mock import Mock, patch
-import sys
+import pytest
+from unittest.mock import MagicMock, patch
+from src.model.handler import GroqModelHandler
+from src.model.interfaces import ModelResponse
 
-# Create mock modules
-mock_modules = {
-    'torch': Mock(),
-    'transformers': Mock(),
-    'transformers.AutoModelForCausalLM': Mock(),
-    'transformers.AutoTokenizer': Mock()
-}
 
-# Apply mocks before any imports
-for mod_name, mock in mock_modules.items():
-    sys.modules[mod_name] = mock
+class TestGroqModelHandler:
+    @pytest.fixture
+    def mock_groq(self):
+        with patch("src.model.handler.groq") as mock:
+            client = MagicMock()
+            mock.Groq.return_value = client
 
-# Now import our modules
-from core.interfaces import ModelResponse
+            choice = MagicMock()
+            choice.message.content = "Hello, world!"
 
-class MockModelHandler:
-    def __init__(self, model_name):
-        self.model_name = model_name
-        self.model = None
-        self.tokenizer = None
+            completion = MagicMock()
+            completion.choices = [choice]
+            completion.model = "llama3-8b-8192"
+            completion.usage = MagicMock()
+            completion.usage.completion_tokens = 3
+            completion.usage.prompt_tokens = 5
+            completion.usage.total_tokens = 8
 
-    def load(self):
-        return True
+            client.chat.completions.create.return_value = completion
+            yield mock
 
-    def generate(self, prompt, **kwargs):
-        return ModelResponse(
-            text="Test response",
-            generation_time=0.1,
-            status="success"
+    def test_generate_returns_model_response(self, mock_groq):
+        handler = GroqModelHandler(api_key="test-key", model="llama3-8b-8192")
+        response = handler.generate("hello")
+
+        assert isinstance(response, ModelResponse)
+        assert response.text == "Hello, world!"
+        assert response.model == "llama3-8b-8192"
+
+    def test_constructor_raises_on_empty_api_key(self):
+        with pytest.raises(ValueError, match="api_key is required"):
+            GroqModelHandler(api_key="")
+
+    def test_constructor_raises_on_empty_model(self):
+        with pytest.raises(ValueError, match="model is required"):
+            GroqModelHandler(api_key="test-key", model="")
+
+    def test_constructor_raises_on_negative_timeout(self):
+        with pytest.raises(ValueError, match="timeout must be positive"):
+            GroqModelHandler(api_key="test-key", timeout=0)
+
+    def test_constructor_raises_on_zero_timeout(self):
+        with pytest.raises(ValueError, match="timeout must be positive"):
+            GroqModelHandler(api_key="test-key", timeout=0)
+
+    def test_generate_handles_rate_limit_error(self, mock_groq):
+        import groq
+        mock_groq.RateLimitError = groq.RateLimitError
+        mock_groq.APIConnectionError = groq.APIConnectionError
+        mock_groq.APIStatusError = groq.APIStatusError
+
+        client = mock_groq.Groq.return_value
+        client.chat.completions.create.side_effect = groq.RateLimitError(
+            "rate limited", response=MagicMock(), body=None
         )
 
-class TestModelHandler(unittest.TestCase):
-    """Test suite for model handling."""
-    
-    def setUp(self):
-        self.model_name = "test-model"
-        self.handler = MockModelHandler(self.model_name)
-    
-    def test_basic_generation(self):
-        """Test basic text generation."""
-        response = self.handler.generate("Test prompt")
-        self.assertEqual(response.status, "success")
-        self.assertIsInstance(response.text, str)
-        self.assertIsInstance(response.generation_time, float)
-    
-    def test_error_handling(self):
-        """Test error handling during generation."""
-        handler = MockModelHandler(None)
-        handler.model = None
-        handler.tokenizer = None
-        
-        response = handler.generate("Test prompt")
-        self.assertIsInstance(response, ModelResponse)
-    
-    def test_generation_parameters(self):
-        """Test generation with different parameters."""
-        response = self.handler.generate(
-            "Test prompt",
-            temperature=0.5,
-            max_length=200,
-            top_p=0.8
-        )
-        self.assertEqual(response.status, "success")
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.status == "error"
+        assert "Rate limited" in response.error
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_generate_handles_connection_error(self, mock_groq):
+        import groq
+        mock_groq.RateLimitError = groq.RateLimitError
+        mock_groq.APIConnectionError = groq.APIConnectionError
+        mock_groq.APIStatusError = groq.APIStatusError
+
+        client = mock_groq.Groq.return_value
+        client.chat.completions.create.side_effect = groq.APIConnectionError(message="connection failed", request=MagicMock())
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.status == "error"
+        assert "connect" in response.error.lower()
+
+    def test_generate_handles_api_status_error(self, mock_groq):
+        import groq
+        mock_groq.RateLimitError = groq.RateLimitError
+        mock_groq.APIConnectionError = groq.APIConnectionError
+        mock_groq.APIStatusError = groq.APIStatusError
+
+        client = mock_groq.Groq.return_value
+        client.chat.completions.create.side_effect = groq.APIStatusError(
+            "401 Unauthorized", response=MagicMock(status_code=401), body=None
+        )
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.status == "error"
+        assert "401" in response.error or "API error" in response.error
+
+    def test_generate_passes_timeout_to_client(self):
+        with patch("src.model.handler.groq") as mock:
+
+            handler = GroqModelHandler(api_key="test-key", timeout=30.0)
+            mock.Groq.assert_called_once_with(api_key="test-key", timeout=30.0)
+    def test_generate_empty_response(self, mock_groq):
+        client = mock_groq.Groq.return_value
+        choice = MagicMock()
+        choice.message.content = None
+        completion = MagicMock()
+        completion.choices = [choice]
+        completion.model = "llama3-8b-8192"
+        completion.usage = None
+        client.chat.completions.create.return_value = completion
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.text == ""
+        assert response.status == "success"
+
+    def test_generate_usage_none_when_not_available(self, mock_groq):
+        client = mock_groq.Groq.return_value
+        completion = MagicMock()
+        completion.choices = [MagicMock(message=MagicMock(content="hi"))]
+        completion.model = "llama3-8b-8192"
+        completion.usage = None
+        client.chat.completions.create.return_value = completion
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.usage is None
+
+    def test_generate_empty_choices_returns_error(self, mock_groq):
+        client = mock_groq.Groq.return_value
+        completion = MagicMock()
+        completion.choices = []
+        completion.model = "llama3-8b-8192"
+        completion.usage = None
+        client.chat.completions.create.return_value = completion
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.status == "error"
+        assert "Empty response" in response.error
+
+    def test_generate_null_message_returns_error(self, mock_groq):
+        client = mock_groq.Groq.return_value
+        choice = MagicMock()
+        choice.message = None
+        completion = MagicMock()
+        completion.choices = [choice]
+        completion.model = "llama3-8b-8192"
+        completion.usage = None
+        client.chat.completions.create.return_value = completion
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.status == "error"
+        assert "Empty message" in response.error
+
+    def test_extract_usage_missing_fields_uses_defaults(self, mock_groq):
+        client = mock_groq.Groq.return_value
+        class PartialUsage:
+            pass
+        completion = MagicMock()
+        completion.choices = [MagicMock(message=MagicMock(content="hi"))]
+        completion.model = "llama3-8b-8192"
+        completion.usage = PartialUsage()
+        client.chat.completions.create.return_value = completion
+
+        handler = GroqModelHandler(api_key="test-key")
+        response = handler.generate("hello")
+        assert response.usage is not None
+        assert response.usage["prompt_tokens"] == 0
+        assert response.usage["completion_tokens"] == 0
+        assert response.usage["total_tokens"] == 0

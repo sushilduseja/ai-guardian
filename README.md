@@ -8,27 +8,36 @@ AI Guardian is a demonstration system that showcases prompt injection defense te
 - **Pattern-based Analysis**: Uses regex patterns to identify both malicious and safe patterns
 - **Input Sanitization**: Automatically redacts potentially harmful content
 - **Statistics Visualization**: Tracks and displays attempt statistics in real-time
-- **Open Source Model Integration**: Uses Hugging Face's transformers library with open-source models
+- **Groq API Integration**: Uses Groq's fast inference API with current free-tier models
+- **UI Enhancements**: Clear-text icon overlay in textarea, session reset button, real-time character counter
 
 ## Technical Stack
 
-- **Frontend**: Streamlit
+- **Frontend**: Streamlit (≥1.24.0)
 - **Visualization**: Plotly Express
-- **ML Framework**: Hugging Face Transformers
-- **Default Model**: distilgpt2 (configurable)
+- **LLM API**: Groq (free-tier models)
+- **Default Model**: llama-3.1-8b-instant
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ai-guardian.git
+git clone https://github.com/sushilduseja/ai-guardian.git
 cd ai-guardian
 ```
 
-2. Install dependencies:
+2. Install dependencies using uv:
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
+
+3. Set your Groq API key:
+```bash
+# Create a .env file in the project root
+echo GROQ_API_KEY=<your-key> > .env
+```
+
+Get a free key at https://console.groq.com/keys
 
 ## Usage
 
@@ -38,19 +47,23 @@ streamlit run main.py
 ```
 
 2. Access the web interface (typically http://localhost:8501)
-3. Enter prompts in the text area
-4. Click "Generate Response" to test the input
+3. Select a model from the sidebar (optional; defaults to Llama 3.1 8B)
+4. Enter prompts in the text area (click the ✕ icon to clear)
+5. Click "Generate Response" to test the input
+6. Use "Reset UI to initial state" button to clear metrics and start fresh
 
 ## Configuration
 
-The system can be configured through environment variables:
+The system can be configured through the `.env` file:
 
-- `MODEL_NAME`: Change the Hugging Face model (default: "distilgpt2")
+- `GROQ_API_KEY`: Your Groq API key (required)
 
-Other supported models include:
-- gpt2
-- EleutherAI/pythia-160m
-- cerebras/Cerebras-GPT-111M
+Model selection is available via the sidebar dropdown (Groq free-tier):
+
+- **Llama 3.1 8B Instant** (default) — fast, current Groq text model
+- **Llama 3.3 70B Versatile** — higher quality reasoning and longer context
+- **Llama 4 Scout** — latest instruction-tuned general-purpose model
+- **Qwen 3 32B** — multilingual, long-form generation
 
 ## Security Features
 
@@ -74,24 +87,26 @@ The system maintains two key metrics:
 
 ```
 ai-guardian/
-├── main.py               # Main Streamlit application
-├── config.py            # Model configuration settings
-├── requirements.txt     # Project dependencies
-├── core/
-│   ├── __init__.py     # Core package initialization
-│   ├── interfaces.py   # Abstract base classes
-│   └── model_handler.py # Model loading and inference
-├── components/
-│   ├── __init__.py     # Components package initialization
-│   ├── input.py        # User input handling
-│   ├── metrics.py      # Analytics dashboard
-│   └── visualizations.py # Security visualizations
-├── utils/
-│   ├── __init__.py     # Utils package initialization
-│   └── utils.py        # Security utility functions
-└── tests/
-    ├── __init__.py     # Tests package initialization
-    └── test_security.py # Security features testing
+├── main.py                    # Main Streamlit application
+├── src/                       # Application package
+│   ├── config.py             # Groq model configuration
+│   ├── state.py              # Session state management
+│   ├── detection.py          # Injection detection & sanitization
+│   ├── model/
+│   │   ├── interfaces.py     # Abstract base classes
+│   │   └── handler.py        # Groq API handler
+│   └── ui/
+│       ├── input.py          # User input handling
+│       ├── metrics.py        # Analytics dashboard
+│       ├── model_selector.py # Model selection
+│       └── visualizations.py # Security visualizations
+├── tests/
+│   ├── test_detection.py     # Detection tests
+│   ├── test_model_handler.py # Handler tests
+│   └── test_state.py         # State tests
+├── .env / .env.example       # Configuration
+├── requirements.txt          # Dependencies
+└── pyproject.toml            # Project metadata
 ```
 
 ## 📄 License
@@ -100,7 +115,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- Hugging Face for providing access to their LLMs.
+- Groq for providing fast LLM inference API.
 - Streamlit for the interactive web interface.
 - Plotly for the visualization tools.
 - The AI safety and security community for their research and insights.
