@@ -14,8 +14,9 @@ class SecurityChecker(ABC):
     def sanitize(self, prompt: str) -> str:
         ...
 
+    @abstractmethod
     def check_and_sanitize(self, prompt: str) -> tuple[bool, str]:
-        raise NotImplementedError  # subclasses must override for single-pass optimization
+        ...
 
 
 INJECTION_PATTERNS: list[str] = [
@@ -120,19 +121,19 @@ class RegexSecurityChecker(SecurityChecker):
     def check_and_sanitize(self, prompt: str) -> tuple[bool, str]:
         normalized = re.sub(r'\s+', ' ', prompt.strip())
         p_len = len(prompt)
-        for i, pattern in enumerate(self._safe):
-            if pattern.search(normalized):
-                logger.debug("Safe pattern %d short-circuited for %d-char prompt", i, p_len)
-                return False, prompt
-        result = prompt
         detected = False
+        result = prompt
         for i, pattern in enumerate(self._injection):
-            if pattern.search(result):
+            if pattern.search(normalized):
                 logger.info("Injection pattern %d matched on %d-char prompt", i, p_len)
                 detected = True
                 result = pattern.sub("[REDACTED]", result)
         if detected:
-            logger.info("Sanitized %d-char prompt (%d redactions applied)", p_len, p_len - len(result))
+            for i, pattern in enumerate(self._safe):
+                if pattern.search(normalized):
+                    logger.debug("Safe pattern %d overrode detection for %d-char prompt", i, p_len)
+                    return False, prompt
+            logger.info("Sanitized %d-char prompt (character delta: %d)", p_len, p_len - len(result))
         return detected, result
 
     def check(self, prompt: str) -> bool:

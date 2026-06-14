@@ -31,9 +31,7 @@ def ensure_session_state() -> SessionState:
 def reset_ui_session() -> None:
     state = ensure_session_state()
     state.reset()
-    st.session_state.pop("input_prompt", None)
-    st.session_state.pop("prompt_input", None)
-    st.rerun()
+    st.session_state["input_prompt"] = ""
 
 state = ensure_session_state()
 logger.info("Session initialized: attempts=%d, blocked=%d", state.attempts, state.blocked)
@@ -41,11 +39,11 @@ logger.info("Session initialized: attempts=%d, blocked=%d", state.attempts, stat
 st.write("# AI Guardian")
 st.write("Your shield against prompt injection attacks")
 
-st.sidebar.button(
-    "Reset UI to initial state",
-    on_click=reset_ui_session,
-    help="Clear the current prompt, counters, and model session to start fresh with fewer repeated calls.",
-)
+if state.show_welcome:
+    with st.container(border=True):
+        st.markdown("**Welcome to AI Guardian!** Type a prompt below or try a sample:")
+        if st.button("🔬 Try sample prompt", key="sample_prompt_btn", help="Insert a sample prompt to get started"):
+            st.session_state["input_prompt"] = "What is AI Guardian and how does it protect against prompt injection?"
 
 security = RegexSecurityChecker()
 
@@ -74,8 +72,6 @@ elif state.model_handler is None:
     st.stop()
 else:
     handler = state.model_handler
-
-display_metrics_dashboard(state.safe_attempts, state.attempts, state.blocked, state.avg_generation_time)
 
 user_prompt = create_prompt_input()
 
@@ -122,6 +118,8 @@ if user_prompt:
                         response.model, response.generation_time,
                         response.usage.get("total_tokens", "N/A") if response.usage else "N/A")
 
+display_metrics_dashboard(state.safe_attempts, state.attempts, state.blocked, state.avg_generation_time)
+
 try:
     create_security_dashboard(state.attempts, state.blocked)
 except Exception as e:
@@ -136,9 +134,20 @@ st.sidebar.markdown("""
 """)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"""
-### 📝 Session Overview
-- ✅ Successful: {len(state.generation_history)}
-- 🛡️ Blocked: {state.blocked}
-- ⚡ Avg Time: {state.avg_generation_time:.2f}s
-""")
+st.sidebar.markdown(f"### 📊 Model Performance")
+st.sidebar.caption(f"Active: **{selected_model}**")
+
+seen = set()
+for model_name, stats in state.model_usage.items():
+    seen.add(model_name)
+    avg = stats["total_time"] / stats["count"] if stats["count"] else 0
+    st.sidebar.markdown(f"- **{model_name}**: {stats['count']} prompts, {avg:.2f}s avg")
+if selected_model not in seen:
+    st.sidebar.markdown(f"- **{selected_model}**: _no data yet_")
+
+st.sidebar.markdown("---")
+st.sidebar.button(
+    "🗑 Reset session",
+    on_click=reset_ui_session,
+    help="Clear prompt history, counters, and model handler to start fresh",
+)

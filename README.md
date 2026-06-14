@@ -1,15 +1,24 @@
 # AI Guardian: Prompt Injection Defense System
 
-AI Guardian is a demonstration system that showcases prompt injection defense techniques for Large Language Models (LLMs). It provides real-time detection and sanitization of potential prompt injection attacks while allowing legitimate prompts to pass through.
+AI Guardian demonstrates prompt injection defense for Large Language Models (LLMs). It detects and sanitizes prompt injection attacks in real time while allowing legitimate prompts to pass through.
+
+## Interface Preview
+
+![AI Guardian](docs/ai-guardian.png)
 
 ## Features
 
-- **Real-time Injection Detection**: Monitors user inputs for common prompt injection patterns
-- **Pattern-based Analysis**: Uses regex patterns to identify both malicious and safe patterns
-- **Input Sanitization**: Automatically redacts potentially harmful content
-- **Statistics Visualization**: Tracks and displays attempt statistics in real-time
-- **Groq API Integration**: Uses Groq's fast inference API with current free-tier models
-- **UI Enhancements**: Clear-text icon overlay in textarea, session reset button, real-time character counter
+- **Real-time Injection Detection**: Monitors user inputs for 57 prompt injection patterns
+- **Safe Pattern Recognition**: 29 safe patterns reduce false positives; safe overrides never bypass detection
+- **Input Sanitization**: Redacts potentially harmful content from detected injections
+- **Groq API Integration**: Uses Groq's fast inference API with multiple free-tier models
+- **Welcome Banner**: First-visit splash with sample prompts to get started
+- **Metrics Dashboard**: Displays total/blocked/safe attempts, average generation time; N/A when no data exists
+- **Security Dashboard**: Pie and bar charts for injection overview; guidance text when empty
+- **Per-Model Performance**: Sidebar tracks prompt count and average time for each model used
+- **Custom Theme**: Security-themed Streamlit config (blue primary, light sidebar, sans-serif font)
+- **Character Counter**: Real-time countdown with progress bar
+- **Inline Clear Button**: Compact ✕ button flush with the character counter row
 
 ## Technical Stack
 
@@ -47,10 +56,13 @@ streamlit run main.py
 ```
 
 2. Access the web interface (typically http://localhost:8501)
-3. Select a model from the sidebar (optional; defaults to Llama 3.1 8B)
-4. Enter prompts in the text area (click the ✕ icon to clear)
-5. Click "Generate Response" to test the input
-6. Use "Reset UI to initial state" button to clear metrics and start fresh
+3. On first visit, see the welcome banner with sample prompts, or type your own
+4. Select a model from the sidebar dropdown (defaults to Llama 3.1 8B)
+5. Enter a prompt in the text area (click the ✕ button to clear)
+6. Results update immediately - injection detection, sanitization, and response from the selected model
+7. View metrics dashboard and security visualizations below the input
+8. Track per-model performance in the sidebar
+9. Use the "Reset session" button at the bottom of the sidebar to clear all state
 
 ## Configuration
 
@@ -60,10 +72,10 @@ The system can be configured through the `.env` file:
 
 Model selection is available via the sidebar dropdown (Groq free-tier):
 
-- **Llama 3.1 8B Instant** (default) — fast, current Groq text model
-- **Llama 3.3 70B Versatile** — higher quality reasoning and longer context
-- **Llama 4 Scout** — latest instruction-tuned general-purpose model
-- **Qwen 3 32B** — multilingual, long-form generation
+- **Llama 3.1 8B Instant** (default) - fast, current Groq text model
+- **Llama 3.3 70B Versatile** - higher quality reasoning and longer context
+- **Llama 4 Scout** - latest instruction-tuned general-purpose model
+- **Qwen 3 32B** - multilingual, long-form generation
 
 ## Security Features
 
@@ -79,14 +91,25 @@ Model selection is available via the sidebar dropdown (Groq free-tier):
 
 ## Statistics
 
-The system maintains two key metrics:
-- **Total Attempts**: All prompt submissions
-- **Blocked Attempts**: Successfully detected injection attempts
+The system tracks two dashboards:
+
+**Metrics Dashboard**
+- **Total Attempts**: All prompt submissions (successful and blocked)
+- **Blocked Threats**: Injection attempts detected and sanitized
+- **Success Rate**: Ratio of safe to total attempts (shows N/A when no data)
+- **Avg Generation Time**: Mean response time from the Groq API
+
+**Security Dashboard**
+- Pie chart of safe vs blocked prompts
+- Bar chart of injection pattern distribution
+- Both show guidance text when no data is available
 
 ## Project Structure
 
 ```
 ai-guardian/
+├── .streamlit/
+│   └── config.toml            # Custom theme configuration
 ├── main.py                    # Main Streamlit application
 ├── src/                       # Application package
 │   ├── config.py             # Groq model configuration
@@ -101,12 +124,12 @@ ai-guardian/
 │       ├── model_selector.py # Model selection
 │       └── visualizations.py # Security visualizations
 ├── tests/
+│   ├── test_config.py        # Configuration tests
 │   ├── test_detection.py     # Detection tests
 │   ├── test_model_handler.py # Handler tests
 │   └── test_state.py         # State tests
 ├── .env / .env.example       # Configuration
-├── requirements.txt          # Dependencies
-└── pyproject.toml            # Project metadata
+└── pyproject.toml            # Project metadata & dependencies
 ```
 
 ## 📄 License

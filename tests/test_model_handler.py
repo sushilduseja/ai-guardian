@@ -7,7 +7,12 @@ from src.model.interfaces import ModelResponse
 class TestGroqModelHandler:
     @pytest.fixture
     def mock_groq(self):
+        import groq
         with patch("src.model.handler.groq") as mock:
+            mock.RateLimitError = groq.RateLimitError
+            mock.APIConnectionError = groq.APIConnectionError
+            mock.APIStatusError = groq.APIStatusError
+
             client = MagicMock()
             mock.Groq.return_value = client
 
@@ -51,10 +56,6 @@ class TestGroqModelHandler:
 
     def test_generate_handles_rate_limit_error(self, mock_groq):
         import groq
-        mock_groq.RateLimitError = groq.RateLimitError
-        mock_groq.APIConnectionError = groq.APIConnectionError
-        mock_groq.APIStatusError = groq.APIStatusError
-
         client = mock_groq.Groq.return_value
         client.chat.completions.create.side_effect = groq.RateLimitError(
             "rate limited", response=MagicMock(), body=None
@@ -67,10 +68,6 @@ class TestGroqModelHandler:
 
     def test_generate_handles_connection_error(self, mock_groq):
         import groq
-        mock_groq.RateLimitError = groq.RateLimitError
-        mock_groq.APIConnectionError = groq.APIConnectionError
-        mock_groq.APIStatusError = groq.APIStatusError
-
         client = mock_groq.Groq.return_value
         client.chat.completions.create.side_effect = groq.APIConnectionError(message="connection failed", request=MagicMock())
 
@@ -81,10 +78,6 @@ class TestGroqModelHandler:
 
     def test_generate_handles_api_status_error(self, mock_groq):
         import groq
-        mock_groq.RateLimitError = groq.RateLimitError
-        mock_groq.APIConnectionError = groq.APIConnectionError
-        mock_groq.APIStatusError = groq.APIStatusError
-
         client = mock_groq.Groq.return_value
         client.chat.completions.create.side_effect = groq.APIStatusError(
             "401 Unauthorized", response=MagicMock(status_code=401), body=None
@@ -113,7 +106,7 @@ class TestGroqModelHandler:
         handler = GroqModelHandler(api_key="test-key")
         response = handler.generate("hello")
         assert response.text == ""
-        assert response.status == "success"
+        assert response.status == "error"
 
     def test_generate_usage_none_when_not_available(self, mock_groq):
         client = mock_groq.Groq.return_value

@@ -11,6 +11,34 @@ class TestSessionState:
         assert state.blocked == 0
         assert state.current_model is None
         assert state.model_handler is None
+        assert state.model_usage == {}
+        assert state.show_welcome is True
+
+    def test_show_welcome_false_after_attempt(self):
+        state = SessionState(attempts=1)
+        assert state.show_welcome is False
+
+    def test_model_stats_empty_for_unknown_model(self):
+        state = SessionState()
+        assert state.model_stats("unknown") == {"count": 0, "total_time": 0.0}
+
+    def test_model_stats_tracks_usage(self):
+        state = SessionState()
+        state.current_model = "llama-3.1-8b-instant"
+        state.add_to_history("p", "r", 1.0)
+        state.add_to_history("p2", "r2", 2.0)
+        stats = state.model_stats("llama-3.1-8b-instant")
+        assert stats["count"] == 2
+        assert stats["total_time"] == 3.0
+
+    def test_model_stats_separate_per_model(self):
+        state = SessionState()
+        state.current_model = "model-a"
+        state.add_to_history("p", "r", 1.0)
+        state.current_model = "model-b"
+        state.add_to_history("p", "r", 2.0)
+        assert state.model_stats("model-a")["count"] == 1
+        assert state.model_stats("model-b")["count"] == 1
 
     def test_attempts_count(self):
         state = SessionState()
@@ -84,3 +112,4 @@ class TestSessionState:
         assert state.blocked == 0
         assert state.current_model is None
         assert state.model_handler is None
+        assert state.model_usage == {}

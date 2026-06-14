@@ -23,6 +23,12 @@ def _create_safety_pie_chart(attempts: int, blocked: int):
         color="Status",
         color_discrete_map={"Safe Prompts": "#00CC96", "Blocked Attempts": "#EF553B"},
     )
+    if attempts == 0:
+        fig.add_annotation(
+            text="No data yet — submit a prompt to see analysis",
+            showarrow=False, font=dict(size=14, color="gray"),
+            x=0.5, y=0.5, xref="paper", yref="paper",
+        )
     st.plotly_chart(fig, width="stretch")
 
 
@@ -35,4 +41,10 @@ def _create_attempts_bar_chart(attempts: int, blocked: int):
         color="Type",
         color_discrete_map={"Total Attempts": "#636EFA", "Blocked Attempts": "#EF553B"},
     )
+    if blocked == 0 and attempts == 0:
+        fig.add_annotation(
+            text="No data yet — submit a prompt to see analysis",
+            showarrow=False, font=dict(size=14, color="gray"),
+            x=0.5, y=0.5, xref="paper", yref="paper",
+        )
     st.plotly_chart(fig, width="stretch")

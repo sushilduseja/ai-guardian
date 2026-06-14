@@ -57,8 +57,15 @@ class GroqModelHandler(ModelHandler):
                     text="", generation_time=elapsed, status="error",
                     error="Empty message in API response", model=self.model_name,
                 )
+            content = choice.message.content or ""
+            if not content:
+                logger.warning("Groq returned empty content")
+                return ModelResponse(
+                    text="", generation_time=elapsed, status="error",
+                    error="Empty response content from API", model=self.model_name,
+                )
             return ModelResponse(
-                text=choice.message.content or "",
+                text=content,
                 generation_time=elapsed,
                 model=getattr(completion, "model", self.model_name),
                 usage=self._extract_usage(completion),
