@@ -1,151 +1,147 @@
 # AI Guardian: Prompt Injection Defense System
 
-AI Guardian is a robust tool designed to detect, analyze, and mitigate prompt injection attacks targeting Large Language Models (LLMs). It offers a multi-layered defense approach, real-time analysis, and an interactive dashboard to visualize attack patterns and defense effectiveness.
+AI Guardian demonstrates prompt injection defense for Large Language Models (LLMs). It detects and sanitizes prompt injection attacks in real time while allowing legitimate prompts to pass through.
 
-## 🛡️ Key Features
+## Interface Preview
 
-- **Multi-Layered Defense Strategies:**
-  - Sanitization Defense: Removes known attack patterns from prompts.
-  - Pattern Matching Defense: Injects warning messages into prompts containing suspicious content.
-  - Prompt Structure Defense: Enforces a structured prompt format to prevent instruction overriding.
-  - Composite Defense: Combines multiple defense strategies for enhanced protection.
+![AI Guardian](docs/ai-guardian.png)
 
-- **Flexible LLM Provider Support:**
-  - OpenAI (GPT-3.5, GPT-4)
-  - Anthropic (Claude)
-  - Hugging Face (Local Fallback Models)
+## Features
 
-- **Real-Time Analysis and Visualization:**
-  - Attack Pattern Detection and Categorization
-  - Defense Effectiveness Metrics (Success Rate, Confidence Reduction)
-  - Interactive Dashboard with:
-    - Attack Type Distribution Chart
-    - Defense Effectiveness Chart
-    - Confidence Reduction Chart
-    - Attack Success Timeline
+- **Real-time Injection Detection**: Monitors user inputs for 57 prompt injection patterns
+- **Safe Pattern Recognition**: 29 safe patterns reduce false positives; safe overrides never bypass detection
+- **Input Sanitization**: Redacts potentially harmful content from detected injections
+- **Groq API Integration**: Uses Groq's fast inference API with multiple free-tier models
+- **Welcome Banner**: First-visit splash with sample prompts to get started
+- **Metrics Dashboard**: Displays total/blocked/safe attempts, average generation time; N/A when no data exists
+- **Security Dashboard**: Pie and bar charts for injection overview; guidance text when empty
+- **Per-Model Performance**: Sidebar tracks prompt count and average time for each model used
+- **Custom Theme**: Security-themed Streamlit config (blue primary, light sidebar, sans-serif font)
+- **Character Counter**: Real-time countdown with progress bar
+- **Inline Clear Button**: Compact ✕ button flush with the character counter row
 
-## 🚀 Getting Started
+## Technical Stack
 
-### 1. Prerequisites
+- **Frontend**: Streamlit (≥1.24.0)
+- **Visualization**: Plotly Express
+- **LLM API**: Groq (free-tier models)
+- **Default Model**: llama-3.1-8b-instant
 
-- Python 3.8+
-- Git
+## Installation
 
-### 2. Installation
-
-1.  Clone the repository:
-
-    ```bash
-    git clone https://github.com/yourusername/ai-guardian.git
-    cd ai-guardian
-    ```
-
-2.  Create and activate a virtual environment:
-
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-    ```
-
-3.  Install dependencies:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  Configure API Keys:
-
-    - Copy the example environment file:
-
-      ```bash
-      cp .env.example .env
-      ```
-
-    - Edit `.env` and add your API keys:
-
-      ```
-      OPENAI_API_KEY=your_openai_api_key
-      ANTHROPIC_API_KEY=your_anthropic_api_key
-      ```
-
-### 3. Running the Application
-
+1. Clone the repository:
 ```bash
-streamlit run app.py
+git clone https://github.com/sushilduseja/ai-guardian.git
+cd ai-guardian
 ```
 
-Open your browser and navigate to the URL provided by Streamlit (usually http://localhost:8501).
-
-## ⚙️ Configuration
-
-The application's behavior can be configured via `config.py`:
-
-- **LLM Provider Settings:** Choose the default LLM provider and model.
-- **Defense Strategy Settings:** Select the default defense strategies to use.
-- **Hugging Face Fallback:** Enable/disable fallback to local Hugging Face models.
-- **Attack Pattern Catalog:** Customize the attack patterns used for detection.
-
-## 🛡️ Defense Strategies in Detail
-
-1. **Sanitization Defense**
-   - **Description:** Removes known prompt injection attack patterns from user input.
-   - **Implementation:** Uses regular expressions and pattern matching to identify and redact malicious content.
-   - **Benefits:** Reduces the likelihood of successful attacks by neutralizing common injection techniques.
-
-2. **Pattern Matching Defense**
-   - **Description:** Adds a security warning to prompts that contain suspicious patterns.
-   - **Implementation:** Injects a warning message to alert the LLM to potential manipulation attempts.
-   - **Benefits:** Encourages the LLM to adhere to safety guidelines and resist injection attempts.
-
-3. **Prompt Structure Defense**
-   - **Description:** Enforces a structured prompt format to isolate user input and prevent instruction overriding.
-   - **Implementation:** Wraps the user's prompt within a predefined structure, providing clear boundaries and context.
-   - **Benefits:** Prevents attackers from hijacking the LLM's instructions or altering its behavior.
-
-4. **Composite Defense**
-   - **Description:** Combines multiple defense strategies for layered protection.
-   - **Implementation:** Applies sanitization, pattern matching, and prompt structuring in sequence.
-   - **Benefits:** Provides a more robust defense against a wider range of attack techniques.
-
-## 📊 Analysis Dashboard
-
-The AI Guardian dashboard provides real-time insights into attack patterns and defense effectiveness:
-
-- **Attack Type Distribution:** A bar chart showing the frequency of different attack categories.
-- **Defense Effectiveness:** A stacked bar chart comparing the success and failure rates of each defense strategy.
-- **Confidence Reduction:** A bar chart showing the average confidence reduction achieved by each defense strategy.
-- **Attack Success Timeline:** A line chart tracking the success rate of attacks over time.
-
-## 🧪 Testing
-
-To run the test suite:
-
+2. Install dependencies using uv:
 ```bash
-pytest
+uv sync
 ```
 
-### Key test areas:
+3. Set your Groq API key:
+```bash
+# Create a .env file in the project root
+echo GROQ_API_KEY=<your-key> > .env
+```
 
-- Defense strategy effectiveness
-- Attack pattern detection accuracy
-- System integration and stability
-- Response analysis and metric calculation## 
+Get a free key at https://console.groq.com/keys
+
+## Usage
+
+1. Start the Streamlit application:
+```bash
+streamlit run main.py
+```
+
+2. Access the web interface (typically http://localhost:8501)
+3. On first visit, see the welcome banner with sample prompts, or type your own
+4. Select a model from the sidebar dropdown (defaults to Llama 3.1 8B)
+5. Enter a prompt in the text area (click the ✕ button to clear)
+6. Results update immediately - injection detection, sanitization, and response from the selected model
+7. View metrics dashboard and security visualizations below the input
+8. Track per-model performance in the sidebar
+9. Use the "Reset session" button at the bottom of the sidebar to clear all state
+
+## Configuration
+
+The system can be configured through the `.env` file:
+
+- `GROQ_API_KEY`: Your Groq API key (required)
+
+Model selection is available via the sidebar dropdown (Groq free-tier):
+
+- **Llama 3.1 8B Instant** (default) - fast, current Groq text model
+- **Llama 3.3 70B Versatile** - higher quality reasoning and longer context
+- **Llama 4 Scout** - latest instruction-tuned general-purpose model
+- **Qwen 3 32B** - multilingual, long-form generation
+
+## Security Features
+
+### Injection Detection
+- Pattern-based detection of common prompt injection attempts
+- Safe pattern recognition to reduce false positives
+- Logging of detected injection attempts
+
+### Input Sanitization
+- Automatic redaction of potentially harmful content
+- Preservation of safe content
+- Real-time feedback on detected threats
+
+## Statistics
+
+The system tracks two dashboards:
+
+**Metrics Dashboard**
+- **Total Attempts**: All prompt submissions (successful and blocked)
+- **Blocked Threats**: Injection attempts detected and sanitized
+- **Success Rate**: Ratio of safe to total attempts (shows N/A when no data)
+- **Avg Generation Time**: Mean response time from the Groq API
+
+**Security Dashboard**
+- Pie chart of safe vs blocked prompts
+- Bar chart of injection pattern distribution
+- Both show guidance text when no data is available
+
+## Project Structure
+
+```
+ai-guardian/
+├── .streamlit/
+│   └── config.toml            # Custom theme configuration
+├── main.py                    # Main Streamlit application
+├── src/                       # Application package
+│   ├── config.py             # Groq model configuration
+│   ├── state.py              # Session state management
+│   ├── detection.py          # Injection detection & sanitization
+│   ├── model/
+│   │   ├── interfaces.py     # Abstract base classes
+│   │   └── handler.py        # Groq API handler
+│   └── ui/
+│       ├── input.py          # User input handling
+│       ├── metrics.py        # Analytics dashboard
+│       ├── model_selector.py # Model selection
+│       └── visualizations.py # Security visualizations
+├── tests/
+│   ├── test_config.py        # Configuration tests
+│   ├── test_detection.py     # Detection tests
+│   ├── test_model_handler.py # Handler tests
+│   └── test_state.py         # State tests
+├── .env / .env.example       # Configuration
+└── pyproject.toml            # Project metadata & dependencies
+```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.## 
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- OpenAI, Anthropic, and Hugging Face for providing access to their LLMs.
+- Groq for providing fast LLM inference API.
 - Streamlit for the interactive web interface.
 - Plotly for the visualization tools.
 - The AI safety and security community for their research and insights.
-
-## 🔗 Related Resources
-- OWASP Prompt Injection
-- LangChain Documentation
-- Streamlit Documentation## 
 
 ## ⚠️ Disclaimer
 
