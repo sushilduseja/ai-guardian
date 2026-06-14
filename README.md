@@ -136,13 +136,6 @@ ai-guardian/
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🙏 Acknowledgments
-
-- Groq for providing fast LLM inference API.
-- Streamlit for the interactive web interface.
-- Plotly for the visualization tools.
-- The AI safety and security community for their research and insights.
-
-## ⚠️ Disclaimer
+## Disclaimer
 
 This tool is intended for educational and defensive purposes only. Users are responsible for complying with the terms of service and ethical guidelines of all LLM providers.
