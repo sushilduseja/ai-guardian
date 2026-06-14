@@ -1,4 +1,4 @@
-# AI Guardian: Prompt Injection Defense System
+# AI Guardian: Prompt Injection Defense System [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sushilduseja/ai-guardian)
 
 AI Guardian demonstrates prompt injection defense for Large Language Models (LLMs). It detects and sanitizes prompt injection attacks in real time while allowing legitimate prompts to pass through.
 
