@@ -1,8 +1,8 @@
-# AI Guardian — Domain Context
+# AI Guardian - Domain Context
 
 ## What is AI Guardian?
 
-A Streamlit-based demonstration system that detects and sanitizes prompt injection attacks against LLMs in real time. Users type prompts, the system checks for injection patterns, sanitizes if needed, then forwards the sanitized prompt to a Groq API model for text generation.
+A Streamlit-based system that detects and sanitizes prompt injection attacks against LLMs in real time. Users type prompts, the system checks for injection patterns, sanitizes if needed, then forwards the sanitized prompt to a Groq API model for text generation.
 
 ---
 
@@ -56,27 +56,27 @@ tests/
 ## Glossary
 
 | Term | Meaning |
-|---|---|---|
+|---|---|
 | **prompt injection** | An attack where user input tricks an LLM into overriding its system instructions |
 | **sanitization** | Replacing detected injection patterns with `[REDACTED]` before forwarding to the model |
-| **detection** | Boolean check — does the prompt match any `INJECTION_PATTERNS`? |
-| **safe pattern** | A regex that looks like an injection but isn't — overrides detection result after injection patterns have already run |
+| **detection** | Boolean check - does the prompt match any `INJECTION_PATTERNS`? |
+| **safe pattern** | A regex that looks like an injection but isn't - overrides detection result after injection patterns have already run |
 | **blocked** | Counter of prompts flagged as injections |
 | **attempts** | Total prompts submitted (successful + blocked) |
 | **ModelHandler** | Abstract interface for generating text via an LLM |
 | **GroqModelHandler** | Concrete `ModelHandler` using the Groq API |
 | **ModelResponse** | Dataclass with text, generation_time, status, error, model, usage |
-| **SecurityChecker** | Abstract interface with `check_and_sanitize(prompt) → (bool, str)` |
+| **SecurityChecker** | Abstract interface with `check_and_sanitize(prompt) -> (bool, str)` |
 | **RegexSecurityChecker** | Concrete `SecurityChecker` using 57 injection + 29 safe regex patterns |
-| **SessionState** | Dataclass bundling all Streamlit session state, now with `model_usage` dict, `model_stats()`, `show_welcome` property |
+| **SessionState** | Dataclass bundling all Streamlit session state, with `model_usage` dict, `model_stats()`, `show_welcome` property |
 
 ## Architecture decisions
 
 ### Groq API replaces local Hugging Face models
-Running `distilgpt2`/`gpt2` locally required PyTorch and several GB of dependencies — impractical for Streamlit Cloud and slow on modest hardware. The Groq API provides near-instant inference on Llama 3 / Mixtral / Gemma 2 without local GPU requirements.
+Running `distilgpt2`/`gpt2` locally required PyTorch and several GB of dependencies - impractical for Streamlit Cloud and slow on modest hardware. The Groq API runs Llama 3 / Mixtral / Gemma 2 without local GPU requirements.
 
 ### SecurityChecker seam with one adapter
-The `SecurityChecker` ABC defines the seam; `RegexSecurityChecker` is the sole production adapter. A second adapter (e.g. `AlwaysPassSecurityChecker` for tests) would make the seam "real" per the two-adapter rule.
+The `SecurityChecker` ABC defines the seam; `RegexSecurityChecker` is the sole production adapter. A second adapter (e.g. `AlwaysPassSecurityChecker` for tests) would make the seam useful per the two-adapter rule.
 
 ### SessionState dataclass consolidates all Streamlit state
 Previously 6 raw `st.session_state` keys scattered across `main.py`. Now one `SessionState` dataclass with typed fields and defaults.
@@ -84,14 +84,14 @@ Previously 6 raw `st.session_state` keys scattered across `main.py`. Now one `Se
 ### Real generation time tracking
 `ModelResponse.generation_time` is captured at the API call site in `GroqModelHandler`, stored in `generation_history`, and averaged for the metrics display.
 
-### Empty API response → error status
+### Empty API response -> error status
 If the Groq API returns an empty response, empty choices, or null message, the handler returns `status="error"` instead of silently returning empty string as success.
 
 ### Per-model usage tracking
 `SessionState.model_usage` is a `dict[str, dict]` tracking count and total_time per model name. `add_to_history()` keys off `state.current_model`. Sidebar iterates all models with usage data plus the currently selected model.
 
 ### Metrics render after state updates
-`display_metrics_dashboard()` and `create_security_dashboard()` are called after prompt processing completes, so they always render current state rather than lagging one interaction behind.
+`display_metrics_dashboard()` and `create_security_dashboard()` are called after prompt processing completes, so they render current state rather than lagging one interaction behind.
 
 ### Design review decisions implemented
 - `.streamlit/config.toml` for security-themed color palette instead of custom CSS
@@ -99,14 +99,14 @@ If the Groq API returns an empty response, empty choices, or null message, the h
 - Delta parameter removed from Total Prompts and Blocked Threats (semantic misuse)
 - Security charts show guidance annotation when data is empty instead of hiding
 - Inline clear button via Streamlit column layout (not broken JS overlay in iframe)
-- Welcome banner + sample prompt drives first-use engagement
+- Welcome banner + sample prompt for first-visit orientation
 
 ## Dead code removed
 
-- `utils/attacks.py` — abandoned attack-pattern library, consolidated into `src/detection.py`
-- `utils/defenses.py` — abandoned defense library, consolidated into `src/detection.py`
-- `utils/detection.py` — abandoned detection logic, consolidated into `src/detection.py`
-- `utils/visualization.py` — replaced by `src/ui/visualizations.py`
-- `app.py` — renamed to `main.py` with package restructure
-- `config.py` — split into `src/config.py` + `src/state.py`
-- `tests/test_defenses.py` — replaced by `tests/test_detection.py` + `tests/test_model_handler.py`
+- `utils/attacks.py` - abandoned attack-pattern library, consolidated into `src/detection.py`
+- `utils/defenses.py` - abandoned defense library, consolidated into `src/detection.py`
+- `utils/detection.py` - abandoned detection logic, consolidated into `src/detection.py`
+- `utils/visualization.py` - replaced by `src/ui/visualizations.py`
+- `app.py` - renamed to `main.py` with package restructure
+- `config.py` - split into `src/config.py` + `src/state.py`
+- `tests/test_defenses.py` - replaced by `tests/test_detection.py` + `tests/test_model_handler.py`
